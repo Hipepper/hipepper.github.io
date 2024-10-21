@@ -1,13 +1,25 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" color-mode="light">
 
   <head>
   <meta charset="utf-8">
-  <meta name="author" content="zchengsite, 1451426471@qq.com" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="John Doe" />
+  <!-- Open Graph Description 简短摘要-->
+  
+  <!-- 用于搜索引擎的文章摘要 -->
   
   
-  <title>windows内核流漏洞研究和挖掘全流程(part1) | Hexo</title>
+  
+  <title>
+    
+      windows内核流漏洞研究和挖掘全流程(part1) 
+      
+      
+      |
+    
+     Hexo
+  </title>
 
   
     <link rel="apple-touch-icon" href="/images/favicon.png">
@@ -18,25 +30,36 @@
   <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
 
   <!-- hexo site css -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
+  <!-- 代码块风格 -->
   
-<link rel="stylesheet" href="/css/base.css">
-<link rel="stylesheet" href="/iconfont/iconfont.css">
-<link rel="stylesheet" href="/css/github-markdown.css">
-<link rel="stylesheet" href="/css/highlight.css">
-
 
   <!-- jquery3.3.1 -->
-  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+  
+    <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
+  
 
   <!-- fancybox -->
-  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
-  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+    <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="/plugins/jquery.fancybox.min.js"></script>
+  
   
 <script src="/js/fancybox.js"></script>
 
 
   
 
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
 <meta name="generator" content="Hexo 7.3.0"></head>
 
 
@@ -89,6 +112,36 @@
 <!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
 
+  <!-- LaTex Display -->
+
+  
+    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    }
+  </script>
+
+
+
+
+
+  <!-- clipboard -->
+
+  
+    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
+  
+  
+<script src="/js/codeCopy.js"></script>
+
+
+
+
+
+
 
   
 
@@ -103,16 +156,16 @@
       <div class="post-title">windows内核流漏洞研究和挖掘全流程(part1)</div>
       <div class="post-attach">
         <span class="post-pubtime">
-          <i class="iconfont icon-updatetime" title="Update time"></i>
-          2024-10-21
+          <i class="iconfont icon-updatetime mr-10" title="更新时间"></i>
+          2024-10-21 17:37:53
         </span>
         
               <span class="post-tags">
-                <i class="iconfont icon-tags" title="Tags"></i>
+                <i class="iconfont icon-tags mr-10" title="标签"></i>
                 
-                <span class="span--tag">
+                <span class="span--tag mr-8">
                   <a href="/tags/%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E/" title="内核漏洞">
-                    <b>#</b> 内核漏洞
+                    #内核漏洞
                   </a>
                 </span>
                 
@@ -268,16 +321,16 @@
           </div>
           <div class="post-attach">
             <span class="post-pubtime">
-              <i class="iconfont icon-updatetime" title="Update time"></i>
-              2024-10-21
+              <i class="iconfont icon-updatetime mr-10" title="更新时间"></i>
+              2024-10-21 17:37:53
             </span>
             
                   <span class="post-tags">
-                    <i class="iconfont icon-tags" title="Tags"></i>
+                    <i class="iconfont icon-tags mr-10" title="标签"></i>
                     
-                    <span class="span--tag">
+                    <span class="span--tag mr-8">
                       <a href="/tags/%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E/" title="内核漏洞">
-                        <b>#</b> 内核漏洞
+                        #内核漏洞
                       </a>
                     </span>
                     
@@ -291,10 +344,15 @@
       
     </div>
     
-  <div class="post-catalog" id="catalog">
-    <div class="title">Content</div>
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">目录</div>
     <div class="catalog-content">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8EMSKSSRV%E5%BC%80%E5%A7%8B"><span class="toc-text">从MSKSSRV开始</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2023-29360-%E9%80%BB%E8%BE%91%E6%BC%8F%E6%B4%9E"><span class="toc-text">CVE-2023-29360 - 逻辑漏洞</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2023-36802-%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86"><span class="toc-text">CVE-2023-36802 - 类型混淆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%86%E8%BF%99%E5%B0%B1%E6%98%AF%E7%BB%93%E6%9D%9F%E4%BA%86%E5%90%97%EF%BC%9F"><span class="toc-text">但这就是结束了吗？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E6%A6%82%E8%BF%B0"><span class="toc-text">内核流概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E7%B1%BB"><span class="toc-text">端口类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AVStream"><span class="toc-text">AVStream</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8E%E8%AE%BE%E5%A4%87%E4%BA%A4%E4%BA%92"><span class="toc-text">与设备交互</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%9A%E4%B8%BE%E8%AE%BE%E5%A4%87"><span class="toc-text">枚举设备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E5%AF%B9%E8%B1%A1"><span class="toc-text">内核流对象</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#KS%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-text">KS过滤器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#KS%E5%BC%95%E8%84%9A"><span class="toc-text">KS引脚</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#KS%E5%B1%9E%E6%80%A7"><span class="toc-text">KS属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E7%BD%91%E7%BB%9C%E6%91%84%E5%83%8F%E5%A4%B4%E8%AF%BB%E5%8F%96%E6%B5%81"><span class="toc-text">从网络摄像头读取流</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E6%9E%B6%E6%9E%84"><span class="toc-text">内核流架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ksthunk%EF%BC%88%E5%86%85%E6%A0%B8%E6%B5%81WOW%E8%BD%AC%E6%8D%A2%E6%9C%8D%E5%8A%A1%E9%A9%B1%E5%8A%A8%E7%A8%8B%E5%BA%8F%EF%BC%89"><span class="toc-text">ksthunk（内核流WOW转换服务驱动程序）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ks%EF%BC%88%E5%86%85%E6%A0%B8%E8%BF%9E%E6%8E%A5%E5%92%8C%E6%B5%81%E6%9E%B6%E6%9E%84%E5%BA%93%EF%BC%89"><span class="toc-text">ks（内核连接和流架构库）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IOCTL-KS-%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-text">IOCTL_KS_*的工作流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E6%94%BB%E5%87%BB%E8%80%85%E7%9A%84%E8%A7%92%E5%BA%A6"><span class="toc-text">从攻击者的角度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A2%AB%E5%BF%BD%E8%A7%86%E7%9A%84%E6%BC%8F%E6%B4%9E%E7%B1%BB%E5%88%AB"><span class="toc-text">被忽视的漏洞类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PreviousMode"><span class="toc-text">PreviousMode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RequestorMode"><span class="toc-text">RequestorMode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-logical-bug-class"><span class="toc-text">A logical bug class</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E7%9A%84%E6%BC%8F%E6%B4%9E%E6%A8%A1%E5%BC%8F"><span class="toc-text">新的漏洞模式</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%88%A9%E7%94%A8"><span class="toc-text">漏洞及利用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2024-35250"><span class="toc-text">CVE-2024-35250</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%90%E6%9D%83"><span class="toc-text">提权</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8"><span class="toc-text">利用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%95%E8%BF%87-kCFG"><span class="toc-text">绕过 kCFG</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2024-30084"><span class="toc-text">CVE-2024-30084</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol>
+      
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8EMSKSSRV%E5%BC%80%E5%A7%8B"><span class="toc-text">从MSKSSRV开始</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2023-29360-%E9%80%BB%E8%BE%91%E6%BC%8F%E6%B4%9E"><span class="toc-text">CVE-2023-29360 - 逻辑漏洞</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2023-36802-%E7%B1%BB%E5%9E%8B%E6%B7%B7%E6%B7%86"><span class="toc-text">CVE-2023-36802 - 类型混淆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%86%E8%BF%99%E5%B0%B1%E6%98%AF%E7%BB%93%E6%9D%9F%E4%BA%86%E5%90%97%EF%BC%9F"><span class="toc-text">但这就是结束了吗？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E6%A6%82%E8%BF%B0"><span class="toc-text">内核流概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AB%AF%E5%8F%A3%E7%B1%BB"><span class="toc-text">端口类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AVStream"><span class="toc-text">AVStream</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8E%E8%AE%BE%E5%A4%87%E4%BA%A4%E4%BA%92"><span class="toc-text">与设备交互</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%9A%E4%B8%BE%E8%AE%BE%E5%A4%87"><span class="toc-text">枚举设备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E5%AF%B9%E8%B1%A1"><span class="toc-text">内核流对象</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#KS%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-text">KS过滤器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#KS%E5%BC%95%E8%84%9A"><span class="toc-text">KS引脚</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#KS%E5%B1%9E%E6%80%A7"><span class="toc-text">KS属性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E7%BD%91%E7%BB%9C%E6%91%84%E5%83%8F%E5%A4%B4%E8%AF%BB%E5%8F%96%E6%B5%81"><span class="toc-text">从网络摄像头读取流</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%B5%81%E6%9E%B6%E6%9E%84"><span class="toc-text">内核流架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ksthunk%EF%BC%88%E5%86%85%E6%A0%B8%E6%B5%81WOW%E8%BD%AC%E6%8D%A2%E6%9C%8D%E5%8A%A1%E9%A9%B1%E5%8A%A8%E7%A8%8B%E5%BA%8F%EF%BC%89"><span class="toc-text">ksthunk（内核流WOW转换服务驱动程序）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ks%EF%BC%88%E5%86%85%E6%A0%B8%E8%BF%9E%E6%8E%A5%E5%92%8C%E6%B5%81%E6%9E%B6%E6%9E%84%E5%BA%93%EF%BC%89"><span class="toc-text">ks（内核连接和流架构库）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IOCTL-KS-%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-text">IOCTL_KS_*的工作流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E%E6%94%BB%E5%87%BB%E8%80%85%E7%9A%84%E8%A7%92%E5%BA%A6"><span class="toc-text">从攻击者的角度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A2%AB%E5%BF%BD%E8%A7%86%E7%9A%84%E6%BC%8F%E6%B4%9E%E7%B1%BB%E5%88%AB"><span class="toc-text">被忽视的漏洞类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PreviousMode"><span class="toc-text">PreviousMode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RequestorMode"><span class="toc-text">RequestorMode</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-logical-bug-class"><span class="toc-text">A logical bug class</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E7%9A%84%E6%BC%8F%E6%B4%9E%E6%A8%A1%E5%BC%8F"><span class="toc-text">新的漏洞模式</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%88%A9%E7%94%A8"><span class="toc-text">漏洞及利用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2024-35250"><span class="toc-text">CVE-2024-35250</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%90%E6%9D%83"><span class="toc-text">提权</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8"><span class="toc-text">利用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%95%E8%BF%87-kCFG"><span class="toc-text">绕过 kCFG</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CVE-2024-30084"><span class="toc-text">CVE-2024-30084</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol>
+      
     </div>
   </div>
 
@@ -312,73 +370,50 @@
 
 
 
+
+
       </div>
     
   </div>
 
 
-        <div class="footer">
+        
+<div class="footer">
   <div class="social">
     <ul>
       
         <li>
-          <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
-            <i class="iconfont icon-github"></i>
-          </a>
+          
+              <a title="github" target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">
+                <i class="iconfont icon-github"></i>
+              </a>
+              
         </li>
-      
-        <li>
-          <a title="email" href="">
-            <i class="iconfont icon-envelope"></i>
-          </a>
-        </li>
-      
-        <li>
-          <a title="facebook" href="">
-            <i class="iconfont icon-facebooksquare"></i>
-          </a>
-        </li>
-      
-        <li>
-          <a title="twitter" href="">
-            <i class="iconfont icon-twitter"></i>
-          </a>
-        </li>
-      
-        <li>
-          <a title="wechat" href="">
-            <i class="iconfont icon-wechat"></i>
-          </a>
-        </li>
-      
-        <li>
-          <a title="weibo" href="">
-            <i class="iconfont icon-weibo"></i>
-          </a>
-        </li>
-      
-        <li>
-          <a title="rss" href="/atom.xml">
-            <i class="iconfont icon-rss"></i>
-          </a>
-        </li>
-      
+        
     </ul>
   </div>
   
+    
     <div class="footer-more">
-      <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © Oranges 2020</a>
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Copyright © 2024 Oranges</a>
+        
     </div>
   
+    
     <div class="footer-more">
-      <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+      
+        <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Theme by Oranges | Powered by Hexo</a>
+        
     </div>
+  
   
 </div>
 
       </div>
 
-      <div class="back-to-top hidden">
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
   <a href="javascript: void(0)">
     <i class="iconfont icon-chevronup"></i>
   </a>
@@ -389,8 +424,8 @@
 
 
 
-      
-  <div class="search-icon" id="search-icon">
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
     <a href="javascript: void(0)">
       <i class="iconfont icon-search"></i>
     </a>
@@ -405,7 +440,7 @@
           </a>
         </span>
         
-          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+          <input type="text" class="search-input" id="search-input" placeholder="搜索...">
         
         <span class="search-close-icon" id="search-close-icon">
           <a href="javascript: void(0)">
@@ -457,7 +492,7 @@
       'use strict';
       var $input = document.getElementById(search_id);
       var $resultContent = document.getElementById(content_id);
-      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>首次搜索，正在载入索引文件，请稍后……<span></ul>";
       $.ajax({
         // 0x01. load xml file
         url: path,
@@ -553,10 +588,18 @@
             });
             str += "</ul>";
             if (str.indexOf('<li>') === -1) {
-              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>没有找到内容，请尝试更换检索词。<span></ul>";
             }
             $resultContent.innerHTML = str;
           });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>未找到search.xml文件，具体请参考：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>请求失败，尝试重新刷新页面或稍后重试。<span></ul>";
+          }
         }
       });
       $(document).on('click', '#search-close-icon', function() {
@@ -574,6 +617,46 @@
 
 
 
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + windows%E5%86%85%E6%A0%B8%E6%B5%81%E6%BC%8F%E6%B4%9E%E7%A0%94%E7%A9%B6%E5%92%8C%E6%8C%96%E6%8E%98%E5%85%A8%E6%B5%81%E7%A8%8B(part1) + '&url=' + http%3A%2F%2Fexample.com%2F2024%2F10%2F21%2Fwindows%25E5%2586%2585%25E6%25A0%25B8%25E6%25B5%2581%25E6%25BC%258F%25E6%25B4%259E%25E7%25A0%2594%25E7%25A9%25B6%25E5%2592%258C%25E6%258C%2596%25E6%258E%2598%25E5%2585%25A8%25E6%25B5%2581%25E7%25A8%258B-part1%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2024/10/21/windows%E5%86%85%E6%A0%B8%E6%B5%81%E6%BC%8F%E6%B4%9E%E7%A0%94%E7%A9%B6%E5%92%8C%E6%8C%96%E6%8E%98%E5%85%A8%E6%B5%81%E7%A8%8B-part1/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
     </div>
   </body>
 </html>
