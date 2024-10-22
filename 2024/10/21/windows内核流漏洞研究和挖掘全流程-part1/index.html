@@ -389,7 +389,7 @@
         repo: 'comments',
         owner: 'Hipepper',
         admin: ['Hipepper'],
-        id: location.pathname,
+        id: (location.pathname).split("/").pop().substring(0, 49),
         distractionFreeMode: false
       })
 
