@@ -18,7 +18,7 @@
       
       |
     
-     Hexo
+     情报站
   </title>
 
   
@@ -199,30 +199,31 @@
 
 
 
+  
+    <script async type="text/javascript" src="/plugins/valine.min.js" onload="loadValineSuc(this)"></script>
+  
 
-
-  <div id="gitalk-container"></div>
+  <div id="vcomments"></div>
 
   <script>
-    function loadGitalkSuc() {
-      const gitalk = new Gitalk({
-        clientID: 'Ov23liqBqEqwciQl8WvY',
-        clientSecret: '0cb4d6995739c12d94f90255f7840cd136ea77b9',
-        repo: 'comments',
-        owner: 'Hipepper',
-        admin: ['Hipepper'],
-        // id: location.pathname,
-        id: (location.pathname).split("/").pop().substring(0, 48),
-        distractionFreeMode: false
+    function loadValineSuc() {
+      new Valine({
+        el: '#vcomments',
+        appId: 'ceAjSe00zC64FzvGqcpmcNMN-gzGzoHsz',
+        appKey: 'OjjBzWRjoxlhtVeii08I5cxA',
+        placeholder: 'Welcome!',
+        avatar: 'retro',
+        lang: 'zh-CN'
       })
-
-      gitalk.render('gitalk-container')
     }
   </script>
-  
-    <link rel="stylesheet" href="/plugins/gitalk.css">
-    <script type="text/javascript" src="/plugins/gitalk.min.js" onload="loadGitalkSuc(this)"></script>
-  
+
+    <style>
+      .comments-container .v .vempty {
+        display: none!important;
+      }
+    </style>
+
 
 
 
