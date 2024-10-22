@@ -18,7 +18,7 @@
       
       |
     
-     Hexo
+     情报站
   </title>
 
   
@@ -98,6 +98,10 @@
           <a href="/archives/">Archives</a>
         </li>
       
+        <li class="nav-item" data-path="/categories/">
+          <a href="/categories/">Categories</a>
+        </li>
+      
         <li class="nav-item" data-path="/tags/">
           <a href="/tags/">Tags</a>
         </li>
@@ -152,83 +156,19 @@
 
 
   
-
-  
-
-  
-
-  
-  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
-  <div class="container post-details" id="post-details">
-    <div class="post-content">
-      <div class="post-title">about</div>
-      <div class="post-attach">
-        <span class="post-pubtime">
-          <i class="iconfont icon-updatetime mr-10" title="更新时间"></i>
-          2024-10-21 20:00:03
-        </span>
-        
-      </div>
-      <div class="markdown-body">
-        
-      </div>
-      
-        <div class="prev-or-next">
-          <div class="post-foot-next">
-            
-          </div>
-          <div class="post-attach">
-            <span class="post-pubtime">
-              <i class="iconfont icon-updatetime mr-10" title="更新时间"></i>
-              2024-10-21 20:00:03
-            </span>
-            
-          </div>
-          <div class="post-foot-prev">
-            
-          </div>
-        </div>
-      
+  <!-- 分类页 url形式：https://yoursite/categories/ -->
+  <div class="container category-index">
+    <div>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90%E4%B8%8E%E6%8C%96%E6%8E%98/">漏洞分析与挖掘</a><span class="category-list-count">2</span></li></ul>
     </div>
-    
-
-    
-      <div class="comments-container">
-        
-
-
-
-
-
-
-  <div id="gitalk-container"></div>
-
-  <script>
-    function loadGitalkSuc() {
-      const gitalk = new Gitalk({
-        clientID: 'Ov23liqBqEqwciQl8WvY',
-        clientSecret: '0cb4d6995739c12d94f90255f7840cd136ea77b9',
-        repo: 'comments',
-        owner: 'Hipepper',
-        admin: ['Hipepper'],
-        id: (location.pathname).split("/").pop().substring(0, 49),
-        distractionFreeMode: false
-      })
-
-      gitalk.render('gitalk-container')
-    }
-  </script>
-  
-    <link rel="stylesheet" href="/plugins/gitalk.css">
-    <script type="text/javascript" src="/plugins/gitalk.min.js" onload="loadGitalkSuc(this)"></script>
-  
-
-
-
-      </div>
-    
   </div>
+  
 
+  
+
+  
+
+  
 
         
 <div class="footer">
