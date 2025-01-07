@@ -179,14 +179,14 @@
 <p>可以在公众号获取原文，目前网站不支持mermaid，可公众号下载原始PDF!!!</p>
 </blockquote>
 <h2 id="HPSocket"><a href="#HPSocket" class="headerlink" title="HPSocket"></a>HPSocket</h2><p>使用的公开技术，基于于 IOCP&#x2F;EPOLL 通信模型，结合内存池、私有堆等技术，实现高效的内存管理，支持大规模、高并发的通信场景。Git地址：<a target="_blank" rel="noopener" href="https://github.com/ldcsaa/HP-Socket">https://github.com/ldcsaa/HP-Socket</a></p>
-
+<img src="/2024/12/06/%E9%93%B6%E7%8B%90%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E6%A8%A1%E5%9D%97/pic1.png" class="" title="pic1.png">
 
 <h2 id="shellcode："><a href="#shellcode：" class="headerlink" title="shellcode："></a>shellcode：</h2><ol>
 <li>在 ntdll_entry 函数中，程序通过 LoadLibraryA 加载 kernel32.dll 和 ntdll.dll，并使用 GetProcAddress 获取所需的函数地址。</li>
 <li>通过 mytcp 和 myudp 函数实现 TCP 和 UDP 的网络通信。程序根据 ShellCodeInfo 结构中的信息进行连接和数据传输。</li>
 <li>定义了一些数据结构，如 ShellCodeInfo、func_t 等，用于存储网络通信所需的信息和函数指针。</li>
 </ol>
-
+<img src="/2024/12/06/%E9%93%B6%E7%8B%90%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E6%A8%A1%E5%9D%97/pic2.png" class="" title="pic2.png">
 
 <h2 id="上线模块："><a href="#上线模块：" class="headerlink" title="上线模块："></a>上线模块：</h2><p>函数调用关系</p>
 <pre class="mermaid">graph TD;
@@ -291,7 +291,7 @@
 <li><code>bool pid_is_running(DWORD pid);</code> 函数：检查指定进程 ID 是否仍在运行。</li>
 <li><code>int memfind(const char* mem, const char* str, int sizem, int sizes);</code> 函数：在内存中查找指定字符串的位置。</li>
 </ol>
-
+<img src="/2024/12/06/%E9%93%B6%E7%8B%90%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E6%A8%A1%E5%9D%97/pic3.png" class="" title="pic3.png">
 
 <h2 id="代理映射模块"><a href="#代理映射模块" class="headerlink" title="代理映射模块"></a>代理映射模块</h2><p>主要作用是实现一个网络代理插件，能够通过TCP或UDP协议与远程服务器进行通信</p>
 <p><strong>函数关系调用流程图</strong></p>
