@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2025-01-22T13:05:38.702Z</updated>
+  <updated>2025-01-23T08:56:08.161Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,34 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Exploit Sets</title>
+    <link href="http://example.com/2025/01/23/Exploit-Sets/"/>
+    <id>http://example.com/2025/01/23/Exploit-Sets/</id>
+    <published>2025-01-23T08:47:01.000Z</published>
+    <updated>2025-01-23T08:56:08.161Z</updated>
+    
+    
+      
+      
+        
+        
+    <summary type="html">&lt;h2 id=&quot;说明&quot;&gt;&lt;a href=&quot;#说明&quot; class=&quot;headerlink&quot; title=&quot;说明&quot;&gt;&lt;/a&gt;说明&lt;/h2&gt;&lt;p&gt;本EXP收集仅供学习使用，禁止用于非法用途&lt;/p&gt;
+&lt;h2 id=&quot;2024-EXP-合集&quot;&gt;&lt;a href=&quot;#2024-EXP-合集&quot;</summary>
+        
+      
+    
+    
+    
+    <category term="web安全" scheme="http://example.com/categories/web%E5%AE%89%E5%85%A8/"/>
+    
+    
+    <category term="EXP" scheme="http://example.com/tags/EXP/"/>
+    
+    <category term="vulnerability" scheme="http://example.com/tags/vulnerability/"/>
+    
+  </entry>
   
   <entry>
     <title>揭秘 “沉默山猫”（Silent Lynx）高级持续威胁组织：针对吉尔吉斯斯坦及周边国家的恶意攻击</title>
