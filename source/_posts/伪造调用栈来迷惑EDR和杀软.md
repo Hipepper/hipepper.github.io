@@ -2,6 +2,7 @@
 title: 伪造调用栈来迷惑EDR和杀软
 date: 2024-12-02 17:17:02
 categories: "EDR"
+top: true
 tags: 
  - "EDR"
  - "主机安全"
