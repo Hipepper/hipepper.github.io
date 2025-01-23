@@ -3,7 +3,7 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
+title: TIPFactory
 subtitle: ''
 description: ''
 keywords:
@@ -101,7 +101,10 @@ theme: oranges
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
-  type: ''
+  type: git
+  repo: https://github.com/Hipepper/Hipepper.github.io
+  # example, https://github.com/hexojs/hexojs.github.io
+  branch: main
 
 
 jsonContent:
